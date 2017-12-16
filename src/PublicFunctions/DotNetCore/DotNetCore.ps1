@@ -73,8 +73,6 @@ function Start-UnitTests {
    
 }
 
-
-
 function Test-DotNetCoreFunctionsAreLoaded {
     return "ok"
 }
