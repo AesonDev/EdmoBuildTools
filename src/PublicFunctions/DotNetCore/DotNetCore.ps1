@@ -19,6 +19,7 @@ function New-DotNetCoreBuild {
     $TestProjects = Get-ChildItem -Path $Location -Recurse -Filter "*.csproj"
     foreach ($Project in $TestProjects) {
         $path = $Project.Directory
+        Write-Output "Building $Project"
         Push-Location $path
         $args = ""
         if ($Configuration) {
@@ -54,21 +55,22 @@ function Start-UnitTests {
 
     $TestProjects = Get-ChildItem -Path $Location -Filter "*.csproj"
     foreach ($Project in $TestProjects) {
-        
+        $path = $Project.Directory
         Write-Output "Testing $Project"
+        Push-Location $path   
+        $args = ""
+        if ($Configuration) {
+            $args += " -c $Configuration"
+        }   
+    
+        Write-Output "dotnet test  $args"    
+        exec {
+            & $dotnetExe test "$args"
+        }
+        Pop-Location
     }
 
-    Push-Location $Location   
-    $args = ""
-    if ($Configuration) {
-        $args += " -c $Configuration"
-    }   
-
-    Write-Output "dotnet test - $args"    
-    exec {
-        & $dotnetExe test "$args"
-    }
-    Pop-Location
+   
 }
 
 
