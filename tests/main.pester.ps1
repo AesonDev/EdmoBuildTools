@@ -20,8 +20,7 @@ Describe "Unit tests" {
 }
 
 Describe "Load internals" {
-    It "DotNet Core functions are loaded" {
-         #{ Get-LocalDotNetCoreVersion } | Should Not Throw
+    It "DotNet Core functions are loaded" {        
          Test-DotNetCoreFunctionsAreLoaded | Should be "ok"
     }
 }

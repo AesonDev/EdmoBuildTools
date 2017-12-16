@@ -16,12 +16,22 @@ Task RunTests -ErrorAction Stop {
     
     Import-Module Pester
    
+    #Get all test files
+    $testFolderPath = "$Script:rootPath\tests\"
+    $testsFiles = Get-ChildItem -Path $testFolderPath -Filter "*.pester.ps1"
+
+     
     # Run the Pester Test
-    $testResults = Invoke-Pester "$Script:rootPath\tests\main.pester.ps1" -PassThru -Verbose
-    if ($testResults.FailedCount -gt 0) {
-        $testResults | Format-List
-        Write-Error -Message 'One or more Pester tests failed. Build cannot continue !'
-    }  
+    foreach ($testsFile in $testsFiles) {
+        $testFileName = $testsFile.FullName
+        $testResults = Invoke-Pester $testFileName -PassThru -Verbose
+        if ($testResults.FailedCount -gt 0) {
+            $testResults | Format-List
+            Write-Error -Message "$testFileName tests failed. Build cannot continue !"
+        }  
+    }
+    
+    
 }
 
 Task IncrementVersion -depends RunTests -ErrorAction Stop {
@@ -29,10 +39,13 @@ Task IncrementVersion -depends RunTests -ErrorAction Stop {
     [version]$currentVersion = (Test-ModuleManifest $manifestPath).Version
     Write-Output "Current version is $currentVersion"
     $currentBuild = $currentVersion.Build
-   
+    
+    #DotSource the versionSpec to get th version from the versionSpecValue object
+    . "$rootPath\VersionSpec.ps1"
+
     #Increment version and update module manifest
     $newBuild = $currentBuild += 1 
-    $newVersion = [version]::new($currentVersion.Major, $currentVersion.Minor, $newBuild)
+    $newVersion = [version]::new($versionSpecValue.Major, $versionSpecValue.Minor, $newBuild)
     Update-ModuleManifest -ModuleVersion $newVersion -Path $manifestPath 
    
     #Show updated version
