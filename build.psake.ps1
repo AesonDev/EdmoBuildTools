@@ -1,16 +1,23 @@
 
+Properties {
+    [bool]$BuildFromServer
+}
+
+
 #Generate work variable
-$rootPath = split-path -parent $MyInvocation.MyCommand.Definition
-$manifestPath = "$rootPath\src\EdmoBuildTools.psd1"
+$Script:rootPath = split-path -parent $MyInvocation.MyCommand.Definition
+$Script:ModuleName = "EdmoBuildTools"
+$manifestPath = "$Script:rootPath\src\$Script:ModuleName.psd1"
+
 
 Task default -Depends Publish
 
 Task RunTests -ErrorAction Stop {
-
+    
     Import-Module Pester
    
     # Run the Pester Test
-    $testResults = Invoke-Pester "$rootPath\tests\main.pester.ps1" -PassThru
+    $testResults = Invoke-Pester "$Script:rootPath\tests\main.pester.ps1" -PassThru
     if ($testResults.FailedCount -gt 0) {
         $testResults | Format-List
         Write-Error -Message 'One or more Pester tests failed. Build cannot continue !'
@@ -29,18 +36,42 @@ Task IncrementVersion -depends RunTests -ErrorAction Stop {
     Update-ModuleManifest -ModuleVersion $newVersion -Path $manifestPath 
    
     #Show updated version
-    [version]$latestVersion = (Test-ModuleManifest $manifestPath).Version
-    Write-Output "New version is $latestVersion"
+    [version]$script:latestVersion = (Test-ModuleManifest $manifestPath).Version
+    Write-Output "New version is $script:latestVersion"
    
 }
 
 Task Publish -depends IncrementVersion -ErrorAction Stop {
-    $apiKey = '4d7779f0-8c1b-4df3-a863-1e755654888f'
-    Register-PSRepository -Name Proget -PublishLocation http://proget/nuget/Powershell-DVL/ -SourceLocation http://proget/nuget/Powershell-DVL/ -InstallationPolicy Trusted  -ErrorAction Ignore
-   
-   # Import-Module  "$rootPath\src\EdmoBuildTools.psd1"
 
-    Publish-Module -Name Pester  -NuGetApiKey $apiKey -Repository Proget -Verbose -Confirm:$false
+    if ($BuildFromServer) {
+        Write-Output "Building from build server"
+        $apiKey = '4d7779f0-8c1b-4df3-a863-1e755654888f'
+        Register-PSRepository -Name Proget -PublishLocation http://proget/nuget/Powershell-DVL/ -SourceLocation http://proget/nuget/Powershell-DVL/ -InstallationPolicy Trusted  -ErrorAction Ignore
+      
+        # Import-Module  "$rootPath\src\EdmoBuildTools.psd1"
+        ## TODO bug in Nuget Provider ? BadRequest when publishing to Proget (Linux Version)
+        Publish-Module -Path "C:\Users\gaetan.AESONDEV\Projects\Edmo\EdmoBuildTools\EdmoBuildTools\"  -NuGetApiKey $apiKey -Repository Proget -Verbose -Confirm:$false
+   
+    }
+    else {
+        Write-Output "Publishing to local Dev Workstation"
+        $version = $script:latestVersion.ToString()
+
+        #Create the local folder where to put the PSModule
+        $modulePath = "C:\Program Files\WindowsPowerShell\Modules\$Script:ModuleName\$version"
+        New-Item -ItemType Directory -Path $modulePath -Force
+        
+        #Copy the module files
+        $moduleFiles = Get-ChildItem -Path "$Script:rootPath\src"
+        foreach ($file in $moduleFiles) {
+            Copy-Item -Path $file.FullName -Destination $modulePath
+        }
+
+        #Show latest installed version
+        Get-Module EdmoBuildTools -ListAvailable | Select-Object Version
+
+    }
+
 }
 
 
