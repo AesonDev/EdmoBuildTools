@@ -10,7 +10,7 @@ $Script:ModuleName = "EdmoBuildTools"
 $manifestPath = "$Script:rootPath\src\$Script:ModuleName.psd1"
 
 
-Task default -Depends Publish
+Task default -Depends CleanOldPsModule
 
 Task RunTests -ErrorAction Stop {
     
@@ -72,6 +72,18 @@ Task Publish -depends IncrementVersion -ErrorAction Stop {
 
     }
 
+}
+
+Task CleanOldPsModule -depends Publish -ErrorAction Stop {
+    $modulePath = "C:\Program Files\WindowsPowerShell\Modules\$Script:ModuleName\"
+    $modules = (Get-ChildItem $modulePath | Sort-Object CreationTime -Descending)
+   
+    # Only keep last 5 version
+    for($i = 5; $i -lt $modules.Count; $i++) {
+      Remove-Item -Recurse  $modules[$i].FullName
+    }
+
+   
 }
 
 

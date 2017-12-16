@@ -12,7 +12,7 @@
 RootModule = '.\EdmoBuildTools.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.0.91'
+ModuleVersion = '1.0.106'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
