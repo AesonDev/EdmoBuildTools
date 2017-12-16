@@ -48,12 +48,19 @@ function New-DotNetCoreBuild {
 function Start-UnitTests {
     param (
         [string]$Location,
-        [string]$Configuration       
+        [string]$Configuration,
+        [bool]$Build = $false,
+        [bool]$Restore = $false       
     )
 
     $dotnetExe = (get-command dotnet).Source
 
-    $TestProjects = Get-ChildItem -Path $Location -Filter "*.csproj"
+    $TestProjects = Get-ChildItem -Path $Location -Recurse -Filter "*.csproj"
+
+    if ($TestProjects.Count -eq 0) {
+        Write-Output " NO TEST FOUND !!!!!!!"
+    }
+
     foreach ($Project in $TestProjects) {
         $path = $Project.Directory
         Write-Output "Testing $Project"
@@ -61,7 +68,15 @@ function Start-UnitTests {
         $args = ""
         if ($Configuration) {
             $args += " -c $Configuration"
-        }   
+        }
+        if ($Build -eq $false) {
+            $args += " --no-build "
+        } 
+        if ($Restore -eq $false) {
+            $args += " --no-restore "
+        }  
+
+        $args += "--verbosity detailed"
     
         Write-Output "dotnet test  $args"    
         exec {
