@@ -1,11 +1,7 @@
-Enum BuildType {
-    XunitTest   
-}
+
 
 function Get-Test {
-    param(
-        [BuildType]$BuildType
-    )   
+   
     return "ok"
 }
 
