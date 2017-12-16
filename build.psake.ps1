@@ -17,7 +17,7 @@ Task RunTests -ErrorAction Stop {
     Import-Module Pester
    
     # Run the Pester Test
-    $testResults = Invoke-Pester "$Script:rootPath\tests\main.pester.ps1" -PassThru
+    $testResults = Invoke-Pester "$Script:rootPath\tests\main.pester.ps1" -PassThru -Verbose
     if ($testResults.FailedCount -gt 0) {
         $testResults | Format-List
         Write-Error -Message 'One or more Pester tests failed. Build cannot continue !'
@@ -67,9 +67,9 @@ Task Publish -depends CleanOldPsModule -ErrorAction Stop {
         New-Item -ItemType Directory -Path $modulePath -Force
         
         #Copy the module files
-        $moduleFiles = Get-ChildItem -Path "$Script:rootPath\src"
+        $moduleFiles = Get-ChildItem  -Path "$Script:rootPath\src"
         foreach ($file in $moduleFiles) {
-            Copy-Item -Path $file.FullName -Destination $modulePath
+            Copy-Item -Path $file.FullName -Destination $modulePath -Recurse
         }
 
         #Show latest installed version

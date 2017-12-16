@@ -12,7 +12,7 @@
 RootModule = '.\EdmoBuildTools.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.0.109'
+ModuleVersion = '1.0.118'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -69,7 +69,8 @@ PowerShellVersion = '4.0'
 # NestedModules = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = 'Get-Test'
+FunctionsToExport = 'Get-Test', 'Get-LocalDotNetCoreVersion', 
+               'Test-DotNetCoreFunctionsAreLoaded'
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = @()
