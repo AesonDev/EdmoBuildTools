@@ -43,8 +43,15 @@ Task IncrementVersion -depends RunTests -ErrorAction Stop {
     #DotSource the versionSpec to get th version from the versionSpecValue object
     . "$rootPath\VersionSpec.ps1"
 
-    #Increment version and update module manifest
-    $newBuild = $currentBuild += 1 
+    if ($currentVersion.Minor -ne $versionSpecValue.Minor) {
+        $newBuild = '0'
+    }
+    else {
+        #Increment version and update module manifest
+        $newBuild = $currentBuild += 1 
+    }
+
+   
     $newVersion = [version]::new($versionSpecValue.Major, $versionSpecValue.Minor, $newBuild)
     Update-ModuleManifest -ModuleVersion $newVersion -Path $manifestPath 
    
