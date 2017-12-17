@@ -14,16 +14,18 @@ function Get-NextVersion {
         
         #Get the current version from VersionSpec
         $currentVersion = Get-Content .\VersionSpec.json | ConvertFrom-Json       
-         
+         Write-Host "Current version = $currentVersion"
         if ($newVersion.Branche -ne "Master") {
            #If the build does not comes from the Master Branche then add the branche name with the build version
            #Every branche has his own incrementation
-           $newVersion.build = $currentVersion.build + 1
+           $newVersion = $currentVersion
+           $newVersion.Build = $currentVersion.Build + 1           
            $strBuild = ""
            $strBuild += $newVersion.Branche
            $strBuild += "-Build"
            $strBuild += $newVersion.Build 
            $strNewVersion = "{0}.{1}.{2}.{3}" -f $newVersion.Major, $newVersion.Minor, $newVersion.Patch, $strBuild 
+           $newVersion | Convertto-Json |  Out-File .\VersionSpec.json
             
         }else{
            #If the build comes from the Master branche then only Major,Minor and Patch are in the version
@@ -32,11 +34,12 @@ function Get-NextVersion {
            $strNewVersion = "{0}.{1}.{2}" -f $currentVersion.Major, $currentVersion.Minor, $currentVersion.Patch
         }   
         Pop-Location
-        return $version
+        return $strNewVersion
     }
     else {
+        Write-Host "No VersionSpec found in $VersionSpecLocation"
         Pop-Location
-        Throw "VersionSpec.json not found"
+        return
     }
   
 }
@@ -51,14 +54,20 @@ function New-DotNetCoreBuild {
    
     $dotnetExe = (get-command dotnet).Source
    
-    $TestProjects = Get-ChildItem -Path $Location -Recurse -Filter "*.csproj"
-    foreach ($Project in $TestProjects) {
+    $Projects = Get-ChildItem -Path $Location -Recurse -Filter "*.csproj" -Exclude "*test*"
+    foreach ($Project in $Projects) {
         $path = $Project.Directory
         $newVersion = Get-NextVersion -VersionSpecLocation $path
-        Write-Output "Building $Project"
-        Push-Location $path
-        #Version is passed as MsBuild parameter and will be set in the .csproj and on the assembly by the .Net Core Cli
-        $args = " /p:SemVer=$newVersion "
+        Write-Output "New version $newVersion"
+        Write-Output "Building $Project in $path"
+
+        Push-Location $path -Verbose
+        #TODO https://blogs.msdn.microsoft.com/sonam_rastogi_blogs/2014/05/14/update-xml-file-using-powershell/
+        $args = ""
+       # if ($newVersion) {
+            #Version is passed as MsBuild parameter and will be set in the .csproj and on the assembly by the .Net Core Cli
+           
+        #}
         if ($Configuration) {
             $args += " -c $Configuration"
         }
@@ -68,11 +77,12 @@ function New-DotNetCoreBuild {
         if ($RestorePackages -eq $false) {
             $args += " --no-restore "
         }
-
+        $args += " --force "
+       
         Write-Output "dotnet build $args"
     
         exec {
-            & $dotnetExe build "$args"
+            & dotnet.exe build /p:BuildNumber='188' "$args"
         }
 
         Pop-Location
